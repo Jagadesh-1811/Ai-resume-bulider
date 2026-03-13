@@ -350,14 +350,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script>
-        if (!window.showAuthModal) window.showAuthModal = () => { const m = document.getElementById('authModal'); if(m) m.style.display = 'flex'; };
-        if (!window.closeAuthModal) window.closeAuthModal = () => { const m = document.getElementById('authModal'); if(m) m.style.display = 'none'; };
-        if (!window.handleAuth) window.handleAuth = () => console.log('Auth loading...');
-        if (!window.handleGoogleAuth) window.handleGoogleAuth = () => console.log('Google auth loading...');
-        if (!window.toggleAuthMode) window.toggleAuthMode = () => console.log('Auth mode toggle loading...');
-        if (!window.logout) window.logout = () => console.log('Logout loading...');
-    </script>
     <script src="script.js?v=20260312-27"></script>
 </body>
 
