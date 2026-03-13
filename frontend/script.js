@@ -19,7 +19,7 @@ function getFetchErrorMessage(error, action = 'connect to the server') {
         if (window.location.protocol === 'file:') {
             return 'This page was opened as a local file. Open http://localhost:8000 in the browser instead.';
         }
-        return `Could not ${action}. Check that ${API_BASE} is reachable and open the app from http://localhost:8000.`;
+        return `CORS or network error: Could not ${action}. Backend: ${API_BASE} (this is usually a CORS issue). Check browser console for details. `;
     }
     return error?.message || 'Request failed.';
 }
