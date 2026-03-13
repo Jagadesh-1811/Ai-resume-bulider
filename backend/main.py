@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import List, Dict, Optional, Any
 from fastapi import FastAPI, HTTPException, Request, Body, Depends, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, Response
+from fastapi.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 from supabase import create_client, Client
@@ -131,10 +131,7 @@ def call_gemini_text(system_prompt: str, user_prompt: str) -> str:
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
-app = FastAPI(title="AI Resume Builder API", version="1.0.0")
-
-# ========== CRITICAL: CORS Middleware MUST be first! ==========
-# List all allowed origins explicitly
+# ========== CORS Configuration ==========
 ALLOWED_ORIGINS = [
     "https://ai-resume-bulider-six.vercel.app",
     "https://ai-resume-bulider-cexr.vercel.app",
@@ -146,7 +143,7 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
-# Add CORS Origins from environment if set
+# Add CORS Origins from environment if set (runtime env on Vercel dashboard)
 cors_origins_env = os.getenv("CORS_ORIGINS", "")
 if cors_origins_env:
     ALLOWED_ORIGINS.extend([o.strip() for o in cors_origins_env.split(",") if o.strip()])
@@ -154,16 +151,45 @@ if cors_origins_env:
 # Remove duplicates
 ALLOWED_ORIGINS = list(set(ALLOWED_ORIGINS))
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=86400,
-)
+ALLOWED_ORIGINS_SET = set(ALLOWED_ORIGINS)
+
+app = FastAPI(title="AI Resume Builder API", version="1.0.0")
+
+# ========== Custom CORS Middleware (reliable on Vercel serverless) ==========
+class CORSHandlerMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin", "")
+
+        # Determine if origin is allowed
+        is_allowed = (
+            origin in ALLOWED_ORIGINS_SET
+            or bool(re.match(r"https?://(localhost|127\.0\.0\.1)(:\d+)?$", origin))
+        )
+        allow_origin = origin if is_allowed else ""
+
+        # Handle OPTIONS preflight immediately — do NOT pass to the route handler
+        if request.method == "OPTIONS":
+            headers = {
+                "Access-Control-Allow-Origin": allow_origin,
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, Origin, X-Requested-With",
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Max-Age": "86400",
+            }
+            return Response(status_code=200, headers=headers)
+
+        response = await call_next(request)
+
+        if allow_origin:
+            response.headers["Access-Control-Allow-Origin"] = allow_origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+            response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin, X-Requested-With"
+            response.headers["Vary"] = "Origin"
+
+        return response
+
+app.add_middleware(CORSHandlerMiddleware)
 
 # Add logging middleware for debugging
 import logging
