@@ -539,6 +539,18 @@ async def debug_env():
         "supabase_client": "INITIALIZED" if supabase else "FAILED",
     }
 
+@app.get("/api/debug/test-gemini")
+async def test_gemini():
+    """Test if Gemini API is actually callable."""
+    try:
+        result = call_gemini_json(
+            "Extract the name from this sentence. Return JSON: {\"extracted_data\": {\"name\": \"<the name>\"}}",
+            "My name is Jagadeshwar"
+        )
+        return {"status": "ok", "result": result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 # CORS OPTIONS handlers - Explicit routes for common endpoints
 @app.options("/api/auth/login")
 @app.options("/api/auth/signup")
