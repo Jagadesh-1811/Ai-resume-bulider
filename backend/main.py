@@ -527,6 +527,18 @@ async def health_check():
         "frontend_served": FRONTEND_DIR.exists()
     }
 
+@app.get("/api/debug/env")
+async def debug_env():
+    """Temporary: check which env vars are configured."""
+    return {
+        "GEMINI_API_KEY": "SET" if os.getenv("GEMINI_API_KEY") else "MISSING",
+        "SUPABASE_URL": "SET" if os.getenv("SUPABASE_URL") else "MISSING",
+        "SUPABASE_KEY": "SET" if os.getenv("SUPABASE_KEY") else "MISSING",
+        "JWT_SECRET": "SET" if os.getenv("JWT_SECRET") else "MISSING",
+        "GEMINI_MODEL": GEMINI_MODEL,
+        "supabase_client": "INITIALIZED" if supabase else "FAILED",
+    }
+
 # CORS OPTIONS handlers - Explicit routes for common endpoints
 @app.options("/api/auth/login")
 @app.options("/api/auth/signup")
