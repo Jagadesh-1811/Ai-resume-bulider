@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Request, Body, Depends, UploadFile, 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 import google.generativeai as genai
 from supabase import create_client, Client
@@ -140,20 +140,20 @@ app = FastAPI(title="AI Resume Builder API", version="1.0.0")
 # Allow Frontend CORS - This handles all cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS + [
+    allow_origins=[
         "https://ai-resume-bulider-six.vercel.app",
         "https://ai-resume-bulider-cexr.vercel.app",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-    ],
+    ] + CORS_ORIGINS,
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
-    max_age=3600,  # Cache preflight for 1 hour
+    max_age=86400,  # Cache preflight for 24 hours
 )
 
 # Add logging middleware for debugging
@@ -162,11 +162,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
-    """Log all incoming requests for debugging"""
-    logger.info(f"[CORS DEBUG] {request.method} {request.url.path} from {request.client}")
+async def cors_and_logging_middleware(request: Request, call_next):
+    """Ensure CORS headers are always present"""
+    origin = request.headers.get("origin", "")
+    
+    # Log all requests
+    logger.info(f"[CORS DEBUG] {request.method} {request.url.path} from origin: {origin}")
+    
+    # Handle preflight requests
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": origin or "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+    
+    # Process the request
     response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    
+    # Always add CORS headers to response
+    response.headers["Access-Control-Allow-Origin"] = origin or "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    
     return response
 
 # In-memory chat history (session-based, not persisted to DB)
