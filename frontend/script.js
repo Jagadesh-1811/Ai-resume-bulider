@@ -11,6 +11,9 @@ function resolveApiBase() {
     }
 
     return `${window.location.origin}/api`;
+    
+}
+return 'https://ai-resume-bulider-six.vercel.app/api';
 }
 
 function getFetchErrorMessage(error, action = 'connect to the server') {
