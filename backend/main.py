@@ -147,50 +147,19 @@ app.add_middleware(
         "http://127.0.0.1:5500",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-    ] + CORS_ORIGINS,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+        "*"  # Allow all origins in development
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
+    allow_headers=["*"],  # Allow all headers including Authorization
     expose_headers=["*"],
-    max_age=86400,  # Cache preflight for 24 hours
+    max_age=86400,
 )
 
 # Add logging middleware for debugging
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-@app.middleware("http")
-async def cors_and_logging_middleware(request: Request, call_next):
-    """Ensure CORS headers are always present"""
-    origin = request.headers.get("origin", "")
-    
-    # Log all requests
-    logger.info(f"[CORS DEBUG] {request.method} {request.url.path} from origin: {origin}")
-    
-    # Handle preflight requests
-    if request.method == "OPTIONS":
-        return Response(
-            status_code=200,
-            headers={
-                "Access-Control-Allow-Origin": origin or "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, X-Requested-With, X-CSRF-Token",
-                "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Max-Age": "86400",
-            }
-        )
-    
-    # Process the request
-    response = await call_next(request)
-    
-    # Always add CORS headers to response
-    response.headers["Access-Control-Allow-Origin"] = origin or "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Expose-Headers"] = "Content-Type, Authorization"
-    
-    return response
 
 # In-memory chat history (session-based, not persisted to DB)
 # Key: session_id, Value: {messages: [...], interview_idx: int}
