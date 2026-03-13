@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Request, Body, Depends, UploadFile, 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, Response
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 from supabase import create_client, Client
@@ -155,41 +155,23 @@ ALLOWED_ORIGINS_SET = set(ALLOWED_ORIGINS)
 
 app = FastAPI(title="AI Resume Builder API", version="1.0.0")
 
-# ========== Custom CORS Middleware (reliable on Vercel serverless) ==========
-class CORSHandlerMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        origin = request.headers.get("origin", "")
+# ========== CORS Middleware (FastAPI built-in — works reliably on Vercel) ==========
+# allow_origin_regex covers all explicit origins + any localhost/127.0.0.1 port
+_ORIGIN_REGEX = (
+    r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+    r"|https://ai-resume-bulider-six\.vercel\.app"
+    r"|https://ai-resume-bulider-cexr\.vercel\.app"
+)
 
-        # Determine if origin is allowed
-        is_allowed = (
-            origin in ALLOWED_ORIGINS_SET
-            or bool(re.match(r"https?://(localhost|127\.0\.0\.1)(:\d+)?$", origin))
-        )
-        allow_origin = origin if is_allowed else ""
-
-        # Handle OPTIONS preflight immediately — do NOT pass to the route handler
-        if request.method == "OPTIONS":
-            headers = {
-                "Access-Control-Allow-Origin": allow_origin,
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
-                "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, Origin, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Max-Age": "86400",
-            }
-            return Response(status_code=200, headers=headers)
-
-        response = await call_next(request)
-
-        if allow_origin:
-            response.headers["Access-Control-Allow-Origin"] = allow_origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-            response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin, X-Requested-With"
-            response.headers["Vary"] = "Origin"
-
-        return response
-
-app.add_middleware(CORSHandlerMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=_ORIGIN_REGEX,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    max_age=86400,
+)
 
 # Add logging middleware for debugging
 import logging
