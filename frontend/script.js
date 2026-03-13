@@ -28,11 +28,30 @@ const API_BASE = resolveApiBase();
 
 async function apiFetch(path, options = {}, action = 'complete the request') {
     const url = `${API_BASE}${path}`;
+    
+    // Ensure proper headers for JSON requests
+    if (!options.headers) {
+        options.headers = {};
+    }
+    if (!options.headers['Content-Type'] && options.method !== 'GET') {
+        options.headers['Content-Type'] = 'application/json';
+    }
 
     try {
+        console.log(`[API] ${options.method || 'GET'} ${url}`);
         const response = await fetch(url, options);
+        
+        // Log response status
+        console.log(`[API] Response status: ${response.status}`);
+        
+        // Log CORS headers if present
+        if (response.headers.get('Access-Control-Allow-Origin')) {
+            console.log(`[API] CORS header found: ${response.headers.get('Access-Control-Allow-Origin')}`);
+        }
+        
         return response;
     } catch (error) {
+        console.error(`[API ERROR] ${url}:`, error);
         throw new Error(`${getFetchErrorMessage(error, action)} Endpoint: ${url}`);
     }
 }
@@ -307,6 +326,29 @@ function triggerDocxDownload(blob, fileName) {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
+}
+
+// --- Diagnostic Helper ---
+async function diagnoseBackendConnection() {
+    console.log('=== CORS & Backend Diagnostic ===');
+    console.log('Frontend URL:', window.location.origin);
+    console.log('API Base:', API_BASE);
+    console.log('Protocol:', window.location.protocol);
+    console.log('Hostname:', window.location.hostname);
+    
+    try {
+        const healthRes = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
+        console.log('Health Check Status:', healthRes.status);
+        console.log('Health Check OK:', healthRes.ok);
+        if (healthRes.ok) {
+            const data = await healthRes.json();
+            console.log('Health Data:', data);
+        } else {
+            console.warn('Health check failed with status:', healthRes.status);
+        }
+    } catch (err) {
+        console.error('Backend unreachable - CORS issue or backend down:', err.message);
+    }
 }
 
 // --- Initialize App & Supabase ---

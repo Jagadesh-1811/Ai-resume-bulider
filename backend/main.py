@@ -136,18 +136,38 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app = FastAPI(title="AI Resume Builder API", version="1.0.0")
 
-# Allow Frontend CORS
+# ========== CRITICAL: CORS Middleware MUST be first! ==========
+# Allow Frontend CORS - This handles all cross-origin requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS + [
         "https://ai-resume-bulider-six.vercel.app",
-        "https://ai-resume-bulider-cexr.vercel.app"
+        "https://ai-resume-bulider-cexr.vercel.app",
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
     ],
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight for 1 hour
 )
+
+# Add logging middleware for debugging
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all incoming requests for debugging"""
+    logger.info(f"[CORS DEBUG] {request.method} {request.url.path} from {request.client}")
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 # In-memory chat history (session-based, not persisted to DB)
 # Key: session_id, Value: {messages: [...], interview_idx: int}
@@ -499,10 +519,22 @@ async def health_check():
         "frontend_served": FRONTEND_DIR.exists()
     }
 
+# CORS OPTIONS endpoints - MUST come before POST/PUT/DELETE
+@app.options("/api/auth/signup")
+@app.options("/api/auth/login")
+@app.options("/api/auth/oauth/complete")
+@app.options("/api/auth/validate")
+@app.options("/api/chat/message")
+@app.options("/api/resume/{resume_id}")
+async def options_handler():
+    """Handle CORS preflight requests"""
+    return {}
+
 @app.post("/api/auth/signup")
 async def signup(req: AuthReq):
     """Sign up a new user via Supabase Auth"""
     if not supabase:
+        logger.error("Supabase not configured")
         raise HTTPException(status_code=500, detail="Supabase not configured. Check .env file.")
     try:
         res = supabase.auth.sign_up({"email": req.email, "password": req.password})
@@ -523,15 +555,22 @@ async def signup(req: AuthReq):
         raise HTTPException(status_code=400, detail=err_msg)
 
 @app.post("/api/auth/login")
-async def login(req: AuthReq):
+async def login(req: AuthReq, request: Request):
     """Log in an existing user via Supabase Auth"""
+    origin = request.headers.get("origin", "unknown")
+    logger.info(f"[AUTH] Login attempt from {origin} for {req.email}")
+    
     if not supabase:
+        logger.error("Supabase not configured for login")
         raise HTTPException(status_code=500, detail="Supabase not configured. Check .env file.")
     try:
+        logger.info(f"[AUTH] Authenticating user: {req.email}")
         res = supabase.auth.sign_in_with_password({"email": req.email, "password": req.password})
         if res.user is None:
+            logger.warning(f"[AUTH] Login failed for {req.email} - user is None")
             raise Exception("Login failed")
         
+        logger.info(f"[AUTH] Login successful for {req.email}")
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": res.user.id, "email": req.email}, expires_delta=access_token_expires
@@ -539,6 +578,7 @@ async def login(req: AuthReq):
         return {"access_token": access_token, "user": {"id": res.user.id, "email": req.email}}
     except Exception as e:
         err_msg = str(e)
+        logger.error(f"[AUTH] Login error for {req.email}: {err_msg}")
         if "Email not confirmed" in err_msg:
             err_msg = "Email not confirmed. Please disable 'Confirm email' in Supabase Auth settings to enable immediate login."
         with open("ai_errors.log", "a") as f:
