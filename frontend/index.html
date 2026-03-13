@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Genius AI</title>
+    <link rel="stylesheet" href="style.css?v=20260312-9">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar">
+        <h1>Skill Genius AI</h1>
+        <div class="nav-controls">
+            <select id="templateSelector">
+                <option value="modern">Modern Professional</option>
+                <option value="classic">ATS Classic</option>
+            </select>
+            <button id="exportPdfBtn" class="btn btn-outline"><i class="fa-solid fa-download"></i> Export PDF</button>
+            <button id="exportDocxBtn" class="btn btn-outline"><i class="fa-solid fa-file-word"></i> Export DOCX</button>
+            <div id="authControls" class="auth-controls">
+                <button id="showLoginBtn" class="btn btn-primary" onclick="window.showAuthModal()">Sign In</button>
+            </div>
+            <div class="user-profile" id="userProfile" style="display: none;">
+                <img src="https://ui-avatars.com/api/?name=User&background=16232A&color=fff" alt="User" class="avatar"
+                    id="userAvatar">
+                <button id="logoutBtn" class="btn btn-outline btn-small" onclick="window.logout()">Log Out</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Authentication Modal -->
+    <div id="authModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="authTitle">Sign In</h2>
+                <button class="btn btn-icon" id="closeAuthBtn" onclick="window.closeAuthModal()"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="authError" style="display: none; color: #e74c3c; margin-bottom: 15px; padding: 10px; background: #fadbd8; border-radius: 4px; text-align: center;"></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="authEmail" class="form-control" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="authPassword" class="form-control" placeholder="••••••••">
+                </div>   
+                <button class="btn btn-primary w-100 mt-3" id="authSubmitBtn" onclick="window.handleAuth()">Sign
+                    In</button>
+                <div class="auth-divider"><span>or</span></div>
+                <button class="btn btn-outline w-100 btn-google" id="googleAuthBtn" onclick="window.handleGoogleAuth()">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="18" height="18">
+                    Continue with Google
+                </button>
+                <div class="auth-switch">
+                    <span id="authSwitchText">Don't have an account?</span>
+                    <a href="#" id="authSwitchLink" onclick="window.toggleAuthMode()">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug/Status Display -->
+    <div id="authDebug" style="display: none; position: fixed; bottom: 10px; right: 10px; background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 4px; font-size: 12px; max-width: 300px; z-index: 10000; max-height: 200px; overflow-y: auto;"></div>
+
+    <!-- Attractive Landing Page (Default View) -->
+    <section class="landing-page" id="landingPage">
+
+        <!-- Animated Background Blobs -->
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+
+        <div class="landing-hero-container">
+            <div class="hero-content">
+
+                <h1>Build your <span class="highlight">Perfect AI Resume</span> in Minutes</h1>
+                <p>Our intelligent career coach interviews you, generates ATS-optimized content, and analyzes your
+                    resume against real job descriptions to guarantee interviews.</p>
+                <div class="landing-cta">
+                        <button class="btn btn-primary btn-large" onclick="window.showAuthModal()">Get Started for Free</button>
+                    <span class="cta-subtext">No credit card required.</span>
+                </div>
+
+                <div class="landing-features">
+                    <div class="feature-card">
+                        <i class="fa-solid fa-comments feature-icon"></i>
+                        <div>
+                            <h3>Chat & Build</h3>
+                            <p>Answer questions naturally and watch your resume assemble.</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fa-solid fa-chart-line feature-icon"></i>
+                        <div>
+                            <h3>Beat the ATS</h3>
+                            <p>Real-time analytics for keywords, gaps, and readability.</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fa-solid fa-bullseye feature-icon"></i>
+                        <div>
+                            <h3>Target Jobs</h3>
+                            <p>Paste a job description for exact tailored recommendations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="floating-mockup">
+                    <div class="mockup-header">
+                        <div class="dots"><span></span><span></span><span></span></div>
+                        <div class="title">Resume Coach</div>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="mock-chat-bubble ai">Hi! What was your role at your last company?</div>
+                        <div class="mock-chat-bubble user">I was a Senior Software Engineer at TechCorp for 3 years.
+                        </div>
+                        <div class="mock-chat-bubble ai generating">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Generating optimized bullets...
+                        </div>
+                        <div class="mock-resume-preview">
+                            <div class="m-line w-long"></div>
+                            <div class="m-line w-med pt"></div>
+                            <div class="m-line w-full pt2"></div>
+                            <div class="m-line w-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div class="landing-about">
+            <div class="about-header">
+                <h2>Why we built this <span class="highlight">resume builder</span></h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="about-grid">
+                <div class="about-text">
+                    <p>We noticed a massive problem in modern hiring: talented individuals get rejected by cold,
+                        automated Applicant Tracking Systems (ATS) simply because their resumes lack the right keywords
+                        or formatting.</p>
+                    <p>This resume builder was built to level the playing field. Our coach works with you to translate your
+                        real-world experience into the exact data-driven language that recruiters—and their
+                        algorithms—are looking for.</p>
+                </div>
+                <div class="about-stats">
+                    <div class="stat-box">
+                        <h4 class="stat-number">2.5x</h4>
+                        <p>More Interview Callbacks</p>
+                    </div>
+                    <div class="stat-box">
+                        <h4 class="stat-number">100%</h4>
+                        <p>ATS Compatibility</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="app-container" id="mainAppContainer" style="display: none;">
+        <!-- Dashboard / Editor Pane (Left) -->
+        <section class="dashboard-pane">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="preview"><i class="fa-solid fa-eye"></i> Live Preview</button>
+                <button class="tab-btn" data-tab="analysis"><i class="fa-solid fa-chart-line"></i> ATS Analysis</button>
+                <button class="tab-btn" data-tab="personalize"><i class="fa-solid fa-bullseye"></i> Target Job</button>
+            </div>
+
+            <div class="tab-content default-hidden" id="tab-preview">
+                <!-- Resume Document Preview -->
+                <div class="resume-wrapper modern" id="resumeDocument">
+                    <header class="resume-header">
+                        <h1 id="r-name">[Your Name]</h1>
+                        <div class="contact-info">
+                            <span><i class="fa-solid fa-envelope"></i> <span id="r-email">your@email.com</span></span>
+                            <span><i class="fa-brands fa-github"></i> <span id="r-github">github.com/username</span></span>
+                            <span><i class="fa-brands fa-linkedin"></i> <span id="r-linkedin">linkedin.com/in/username</span></span>
+                        </div>
+                    </header>
+
+                    <div class="resume-body">
+                        <section class="resume-section" id="summary-section">
+                            <h2>Professional Summary</h2>
+                            <p id="r-summary" class="editable-content" contenteditable="true">
+                                Please sign in and start chatting with the AI Assistant to generate your professional
+                                summary...
+                            </p>
+                            <button class="btn btn-icon enhance-btn" title="Enhance with AI"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        </section>
+
+                        <section class="resume-section" id="experience-section">
+                            <h2>Experience</h2>
+                            <div class="experience-list" id="r-experience">
+                                <p style="color: var(--text-muted); font-style: italic;">No experience added yet. Tell
+                                    the AI about your work history!</p>
+                            </div>
+                            <button class="btn btn-icon enhance-btn" title="Enhance Experience with AI"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        </section>
+
+                        <section class="resume-section" id="skills-section">
+                            <h2>Skills</h2>
+                            <div class="skills-list" id="r-skills">
+                                <p style="color: var(--text-muted); font-style: italic;">No skills added yet.</p>
+                            </div>
+                            <button class="btn btn-icon enhance-btn" title="Enhance Skills with AI"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        </section>
+
+                        <section class="resume-section" id="education-section">
+                            <h2>Education</h2>
+                            <div class="experience-list editable-content" id="r-education" contenteditable="true">
+                                <p style="color: var(--text-muted); font-style: italic;">No education added yet.</p>
+                            </div>
+                            <button class="btn btn-icon enhance-btn" title="Enhance with AI"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        </section>
+
+                        <section class="resume-section" id="projects-section">
+                            <h2>Projects</h2>
+                            <div class="experience-list editable-content" id="r-projects" contenteditable="true">
+                                <p style="color: var(--text-muted); font-style: italic;">No projects added yet.</p>
+                            </div>
+                            <button class="btn btn-icon enhance-btn" title="Enhance with AI"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        </section>
+
+                        <section class="resume-section" id="achievements-section">
+                            <h2>Achievements</h2>
+                            <ul class="bullet-list editable-content" id="r-achievements" contenteditable="true">
+                                <li style="color: var(--text-muted); font-style: italic;">No achievements added yet.</li>
+                            </ul>
+                            <button class="btn btn-icon enhance-btn" title="Enhance with AI"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-analysis" style="display: none;">
+                <div class="analysis-dashboard">
+                    <h2>Upload Resume for ATS Analysis</h2>
+                    <p>Upload your resume (PDF or DOCX) and tell us the Target Role or paste a Job Description.</p>
+                    <div style="margin: 20px 0; display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block;">Resume File</label>
+                            <input type="file" id="resumeUploadInput" accept=".pdf,.docx,.txt" style="display: block; width: 100%; padding: 10px; border: 2px dashed #ccc; border-radius: 8px; cursor: pointer;" />
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block;">Target Role / Job Description</label>
+                            <textarea id="targetRoleInput" placeholder="Enter Target Role (e.g., 'Software Engineer') or paste a Job Description here..." rows="4" style="width: 100%; border-radius: 8px; padding: 12px; border: 1px solid #d1d5db; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary run-analysis-btn" id="runAnalysisBtn" style="width: 100%; justify-content: center;"><i class="fa-solid fa-bolt"></i> Run Full ATS Analysis</button>
+
+                    <div id="analysisResultsContainer" style="display: none; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 30px;">
+                        <div class="score-card">
+                            <div class="score-circle">
+                                <span class="score-value" id="atsScoreValue">--</span>
+                            </div>
+                            <div class="score-details">
+                                <h3>ATS Match Score</h3>
+                                <p>Calculated based on your target role.</p>
+                            </div>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-box">
+                                <h4>Readability</h4>
+                                <span class="m-value" id="atsReadability">--</span>
+                            </div>
+                            <div class="metric-box">
+                                <h4>Keyword Density</h4>
+                                <span class="m-value" id="atsKeywordMatch">--</span>
+                            </div>
+                            <div class="metric-box">
+                                <h4>Completeness</h4>
+                                <span class="m-value" id="atsCompleteness">--</span>
+                            </div>
+                        </div>
+
+                        <div class="feedback-section">
+                            <h3>Actionable Feedback</h3>
+                            <ul class="feedback-list" id="analysisFeedback">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-personalize" style="display: none;">
+                <div class="personalize-tool">
+                    <h2>Target a Specific Job</h2>
+                    <p>Paste a job description below, and I'll analyze how well your resume matches and suggest wording
+                        tweaks.</p>
+                    <textarea id="jobDescriptionInput" placeholder="Paste Job Description here..." rows="6"></textarea>
+                    <button class="btn btn-primary" id="analyzeJdBtn"><i class="fa-solid fa-search"></i> Analyze Job
+                        Match</button>
+
+                    <div id="jdAnalysisResults" style="display: none; margin-top: 20px;">
+                        <h3>Missing Keywords</h3>
+                        <div class="skills-list missing-skills" id="missingJdSkills">
+                            <!-- Injected missing skills -->
+                        </div>
+
+                        <h3>Suggested Summary</h3>
+                        <div class="suggestion-card">
+                            <p id="jdSuggestedSummary">Your tailored summary will appear here.</p>
+                        </div>
+
+                        <h3>AI Skill Suggestions</h3>
+                        <div class="skills-list missing-skills" id="jdSkillSuggestions"></div>
+
+                        <h3>Recommended Job Roles</h3>
+                        <div class="skills-list missing-skills" id="jdRoleRecommendations"></div>
+
+                        <h3>Suggested Changes</h3>
+                        <div class="suggestion-card">
+                            <p><strong>Keyword Match:</strong> <span id="jdKeywordMatch">0%</span></p>
+                            <p id="jdChangeHint" class="new-text">Paste a job description and click Analyze Job Match.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chat Assistant Pane (Right) -->
+        <section class="chat-pane">
+            <div class="chat-header">
+                <h2>Resume Builder Assistant</h2>
+            </div>
+            <div class="chat-history" id="chatHistory">
+                <div class="message assistant">
+                    <div class="bubble">
+                        Hi! I will build your resume with short questions. First: what is your full name?
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <textarea id="chatInput" placeholder="Type your answer here..." rows="1"></textarea>
+                <button id="sendBtn" class="btn btn-icon"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Supabase JS URL -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="script.js?v=20260312-27"></script>
+</body>
+
+</html>
