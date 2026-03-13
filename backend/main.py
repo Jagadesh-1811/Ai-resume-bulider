@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Request, Body, Depends, UploadFile, 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, Response
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 from supabase import create_client, Client
