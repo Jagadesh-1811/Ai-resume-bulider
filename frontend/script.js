@@ -10,8 +10,9 @@ function resolveApiBase() {
         return 'http://localhost:8000/api';
     }
 
-    // Production environment - use the production backend on Vercel
-    return 'https://ai-resume-bulider-six.vercel.app/api';
+    // Production environment - backend is on same domain as frontend
+    // Both deployed to Vercel, so use same domain
+    return `${window.location.origin}/api`;
 }
 
 function getFetchErrorMessage(error, action = 'connect to the server') {
