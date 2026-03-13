@@ -130,8 +130,8 @@ def call_gemini_text(system_prompt: str, user_prompt: str) -> str:
         raise Exception(f"Gemini API error: {str(e)}")
 
 # Setup CORS Origins
-cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000")
-CORS_ORIGINS = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip() and origin.strip() != "*"]
+cors_origins_str = os.getenv("CORS_ORIGINS", "")
+CORS_ORIGINS = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()] if cors_origins_str else []
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app = FastAPI(title="AI Resume Builder API", version="1.0.0")
@@ -140,19 +140,19 @@ app = FastAPI(title="AI Resume Builder API", version="1.0.0")
 # Allow Frontend CORS - This handles all cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
+    allow_origins=list(set([
         "https://ai-resume-bulider-six.vercel.app",
         "https://ai-resume-bulider-cexr.vercel.app",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-        "*"  # Allow all origins in development
-    ],
+    ] + CORS_ORIGINS)),  # Merge with env variable origins
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
-    allow_headers=["*"],  # Allow all headers including Authorization
-    expose_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    expose_headers=["Content-Type", "Authorization"],
     max_age=86400,
 )
 
