@@ -377,6 +377,9 @@ async function initApp() {
 
     try {
         const healthRes = await apiFetch('/health', { cache: 'no-store' }, 'reach the backend');
+        if (!healthRes.ok) {
+            throw new Error(`Backend health check failed (${healthRes.status}). Make sure backend is running.`);
+        }
         const healthData = await healthRes.json();
 
         const res = await apiFetch('/config', { cache: 'no-store' }, 'load app configuration');
@@ -617,6 +620,12 @@ window.handleGoogleAuth = async () => {
         return;
     }
 
+    const googleBtn = document.getElementById('googleAuthBtn');
+    if (googleBtn) {
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
+    }
+
     try {
         localStorage.setItem(GOOGLE_AUTH_PROGRESS_KEY, 'true');
         showAuthDebug(`Starting Google OAuth\nRedirect: ${window.location.origin + window.location.pathname}`);
@@ -626,10 +635,19 @@ window.handleGoogleAuth = async () => {
                 redirectTo: window.location.origin + window.location.pathname
             }
         });
-        if (error) throw error;
+        if (error) {
+            throw new Error(error.message || 'Google sign-in failed. Check your Supabase configuration.');
+        }
     } catch (err) {
         clearGoogleAuthProgress();
-        showAuthError(err.message);
+        console.error('Google Auth Error:', err);
+        const errorMsg = err.message || 'Google sign-in failed. Please try again.';
+        showAuthError(errorMsg);
+        showAuthDebug(`Google Auth Error: ${errorMsg}`);
+        if (googleBtn) {
+            googleBtn.disabled = false;
+            googleBtn.innerHTML = '<img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="18" height="18"> Continue with Google';
+        }
     }
 };
 
