@@ -210,7 +210,7 @@ function showAuthDebug(message) {
     const debugDiv = document.getElementById('authDebug');
     if (!debugDiv) return;
     debugDiv.innerText = message;
-    debugDiv.style.display = 'block';
+    debugDiv.style.display = 'none'; // Hidden - only for debugging in console
 }
 
 function clearGoogleAuthProgress() {
