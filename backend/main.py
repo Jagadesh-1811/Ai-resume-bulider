@@ -18,6 +18,10 @@ import docx
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 # Setup Supabase
@@ -90,8 +94,7 @@ def call_gemini_json(system_prompt: str, user_prompt: str) -> dict:
             
     except Exception as e:
         print(f"[GEMINI] Error: {str(e)}")
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] GEMINI API ERROR: {str(e)}")
+        logger.error(f"[{datetime.now()}] GEMINI API ERROR: {str(e)}")
         raise Exception(f"Gemini API error: {str(e)}")
 
 def call_gemini_text(system_prompt: str, user_prompt: str) -> str:
@@ -125,8 +128,7 @@ def call_gemini_text(system_prompt: str, user_prompt: str) -> str:
         
     except Exception as e:
         print(f"[GEMINI] Error: {str(e)}")
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] GEMINI API ERROR: {str(e)}")
+        logger.error(f"[{datetime.now()}] GEMINI API ERROR: {str(e)}")
         raise Exception(f"Gemini API error: {str(e)}")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
@@ -173,10 +175,7 @@ app.add_middleware(
     max_age=86400,
 )
 
-# Add logging middleware for debugging
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
 
 # In-memory chat history (session-based, not persisted to DB)
 # Key: session_id, Value: {messages: [...], interview_idx: int}
@@ -559,8 +558,7 @@ async def signup(req: AuthReq):
         err_msg = str(e)
         if "Email not confirmed" in err_msg:
             err_msg = "Email not confirmed. Please disable 'Confirm email' in Supabase Auth settings to enable immediate login."
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] AUTH ERROR (signup): {str(e)}")
+        logger.error(f"[{datetime.now()}] AUTH ERROR (signup): {str(e)}")
         raise HTTPException(status_code=400, detail=err_msg)
 
 @app.post("/api/auth/login")
@@ -590,8 +588,7 @@ async def login(req: AuthReq, request: Request):
         logger.error(f"[AUTH] Login error for {req.email}: {err_msg}")
         if "Email not confirmed" in err_msg:
             err_msg = "Email not confirmed. Please disable 'Confirm email' in Supabase Auth settings to enable immediate login."
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] AUTH ERROR (login): {str(e)}")
+        logger.error(f"[{datetime.now()}] AUTH ERROR (login): {str(e)}")
         raise HTTPException(status_code=400, detail=err_msg)
 
 @app.get("/api/auth/validate")
@@ -627,8 +624,7 @@ async def complete_oauth_login(req: OAuthCompleteReq):
     except HTTPException:
         raise
     except Exception as e:
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] AUTH ERROR (oauth_complete): {str(e)}")
+        logger.error(f"[{datetime.now()}] AUTH ERROR (oauth_complete): {str(e)}")
         raise HTTPException(status_code=400, detail="OAuth login could not be completed")
 
 @app.post("/api/chat/message")
@@ -736,8 +732,7 @@ Return: {{"extracted_data": {{"<key>": <value>}}}} or {{"extracted_data": {{}}}}
         parsed = call_gemini_json(system_prompt, user_prompt)
         extracted_data = normalize_extracted_data(parsed.get("extracted_data", {}))
     except Exception as e:
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] AI ERROR (chat_message): {str(e)}")
+        logger.error(f"[{datetime.now()}] AI ERROR (chat_message): {str(e)}")
         extracted_data = {}
 
     # ── Merge extracted data into resume ──
@@ -1059,8 +1054,7 @@ You MUST return a JSON object with EXACTLY these keys:
         else:
             raise Exception("Resume text is too short or empty")
     except Exception as e:
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] AI ERROR (analysis_upload): {str(e)}")
+        logger.error(f"[{datetime.now()}] AI ERROR (analysis_upload): {str(e)}")
         ai_analysis = {
             "keyword_density": "N/A",
             "ats_compatibility": 50,
@@ -1164,8 +1158,7 @@ Example:
     try:
         result = call_gemini_json(system_prompt, user_prompt)
     except Exception as e:
-        with open("ai_errors.log", "a") as f:
-            f.write(f"\n[{datetime.now()}] AI ERROR (personalize_resume): {str(e)}")
+        logger.error(f"[{datetime.now()}] AI ERROR (personalize_resume): {str(e)}")
         result = {
             "keyword_match_rate": 0,
             "missing_keywords": ["Error analyzing job match. Please try again."],
