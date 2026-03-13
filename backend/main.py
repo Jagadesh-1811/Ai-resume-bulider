@@ -129,30 +129,39 @@ def call_gemini_text(system_prompt: str, user_prompt: str) -> str:
             f.write(f"\n[{datetime.now()}] GEMINI API ERROR: {str(e)}")
         raise Exception(f"Gemini API error: {str(e)}")
 
-# Setup CORS Origins
-cors_origins_str = os.getenv("CORS_ORIGINS", "")
-CORS_ORIGINS = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()] if cors_origins_str else []
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app = FastAPI(title="AI Resume Builder API", version="1.0.0")
 
 # ========== CRITICAL: CORS Middleware MUST be first! ==========
-# Allow Frontend CORS - This handles all cross-origin requests
+# List all allowed origins explicitly
+ALLOWED_ORIGINS = [
+    "https://ai-resume-bulider-six.vercel.app",
+    "https://ai-resume-bulider-cexr.vercel.app",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Add CORS Origins from environment if set
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    ALLOWED_ORIGINS.extend([o.strip() for o in cors_origins_env.split(",") if o.strip()])
+
+# Remove duplicates
+ALLOWED_ORIGINS = list(set(ALLOWED_ORIGINS))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(set([
-        "https://ai-resume-bulider-six.vercel.app",
-        "https://ai-resume-bulider-cexr.vercel.app",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ] + CORS_ORIGINS)),  # Merge with env variable origins
+    allow_origins=ALLOWED_ORIGINS,
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
-    allow_headers=["Content-Type", "Authorization", "Accept"],
-    expose_headers=["Content-Type", "Authorization"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
     max_age=86400,
 )
 
@@ -511,16 +520,10 @@ async def health_check():
         "frontend_served": FRONTEND_DIR.exists()
     }
 
-# CORS OPTIONS endpoints - MUST come before POST/PUT/DELETE
-@app.options("/api/auth/signup")
-@app.options("/api/auth/login")
-@app.options("/api/auth/oauth/complete")
-@app.options("/api/auth/validate")
-@app.options("/api/chat/message")
-@app.options("/api/resume/{resume_id}")
+# CORS OPTIONS handlers - Allow preflight requests
 @app.options("/api/{path:path}")
-async def options_handler():
-    """Handle CORS preflight requests"""
+async def preflight_handler(path: str):
+    """Handle CORS preflight OPTIONS requests"""
     return {}
 
 @app.post("/api/auth/signup")
