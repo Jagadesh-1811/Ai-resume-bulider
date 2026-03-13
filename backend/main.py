@@ -175,8 +175,9 @@ async def cors_and_logging_middleware(request: Request, call_next):
             status_code=200,
             headers={
                 "Access-Control-Allow-Origin": origin or "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, X-Requested-With, X-CSRF-Token",
+                "Access-Control-Allow-Credentials": "true",
                 "Access-Control-Max-Age": "86400",
             }
         )
@@ -187,6 +188,7 @@ async def cors_and_logging_middleware(request: Request, call_next):
     # Always add CORS headers to response
     response.headers["Access-Control-Allow-Origin"] = origin or "*"
     response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Expose-Headers"] = "Content-Type, Authorization"
     
     return response
 
@@ -547,6 +549,7 @@ async def health_check():
 @app.options("/api/auth/validate")
 @app.options("/api/chat/message")
 @app.options("/api/resume/{resume_id}")
+@app.options("/api/{path:path}")
 async def options_handler():
     """Handle CORS preflight requests"""
     return {}
