@@ -159,7 +159,7 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=86400,
@@ -520,9 +520,14 @@ async def health_check():
         "frontend_served": FRONTEND_DIR.exists()
     }
 
-# CORS OPTIONS handlers - Allow preflight requests
-@app.options("/api/{path:path}")
-async def preflight_handler(path: str):
+# CORS OPTIONS handlers - Explicit routes for common endpoints
+@app.options("/api/auth/login")
+@app.options("/api/auth/signup")
+@app.options("/api/auth/validate")
+@app.options("/api/auth/oauth/complete")
+@app.options("/api/chat/message")
+@app.options("/api/resume/{resume_id}")
+async def options_handler():
     """Handle CORS preflight OPTIONS requests"""
     return {}
 
