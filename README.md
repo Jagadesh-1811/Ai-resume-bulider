@@ -4,7 +4,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![FastAPI](https://img.shields.io/badge/fastapi-0.95+-green)
-![License](https://img.shields.io/badge/license-MIT-blue)
+
 
 ## Table of Contents
 
